@@ -1,0 +1,49 @@
+name: Linux mount sandbox checks
+
+on:
+  push:
+    branches: [ci/enable-linux-checks]
+    paths: [.github/workflows/linux-namespace-validation.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  namespace-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 7c9df52b292682ba691e3e9f87e37f006c3cd42b
+      # Only these sandbox tests need mount privileges. Keep the source unchanged,
+      # and do not relax the runner's unprivileged-user-namespace policy.
+      - name: Check privileged user and mount namespace support
+        run: sudo unshare -rm true
+      - name: Cable pass write tests without skips
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo bash cinder-home/tools/test_cable_pass.sh | tee "$RUNNER_TEMP/cable-pass.log"
+          if grep -Eq '^skip:|0 passed, 0 failed \(skipped\)' "$RUNNER_TEMP/cable-pass.log"; then
+            echo 'Namespace test was skipped, so this validation is incomplete.' >&2
+            exit 1
+          fi
+      - name: Install mount lifecycle tests without skips
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo bash cinder-home/tools/test_install_mounts.sh | tee "$RUNNER_TEMP/install-mounts.log"
+          if grep -Eq '^skip:|0 passed, 0 failed \(skipped\)' "$RUNNER_TEMP/install-mounts.log"; then
+            echo 'Namespace test was skipped, so this validation is incomplete.' >&2
+            exit 1
+          fi
+      - name: Save sandbox test logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: namespace-test-logs
+          path: |
+            ${{ runner.temp }}/cable-pass.log
+            ${{ runner.temp }}/install-mounts.log
+          if-no-files-found: warn
