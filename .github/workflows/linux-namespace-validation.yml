@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: 7c9df52b292682ba691e3e9f87e37f006c3cd42b
+          ref: 1932945b8ad92ac43c8cdd91f670d651a9d87bd4
       # Only these sandbox tests need mount privileges. Keep the source unchanged,
       # and do not relax the runner's unprivileged-user-namespace policy.
       - name: Check privileged user and mount namespace support
