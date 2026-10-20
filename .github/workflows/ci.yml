@@ -28,7 +28,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, ci/enable-linux-checks]
     tags-ignore: ["v*"]     # tags are release.yml's job, no need to run twice
   pull_request:
   workflow_dispatch:
