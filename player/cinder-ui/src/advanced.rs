@@ -107,6 +107,7 @@ pub struct Advanced {
     pub dsee_hx: bool,
     /// "Off", or one of [`DSEE_MODES`].
     pub dsee_custom: &'static str,
+    pub dsee_custom_on: bool,
     /// One of [`VINYL_TYPES`]. Only in the path while the Vinyl Processor itself is on, which is
     /// on the Sound screen — said so in the row's subtitle rather than hiding the row, because
     /// "set it up, then switch it on" is a reasonable order to do things in.
@@ -119,6 +120,7 @@ pub struct Advanced {
     pub dac_eq_on: bool,
     /// One of [`CLEAR_BASS`], or None where the firmware has no six-band EQ in its chain.
     pub clear_bass: Option<&'static str>,
+    pub clear_bass_on: bool,
     /// Name of whatever upstream control is currently overriding the rest of the chain, if any.
     pub overridden_by: Option<&'static str>,
     /// Walkman One's sound library: its effect chain has no `clearphase` and no `dseeai`
@@ -192,6 +194,8 @@ fn a_row(
     label: &str,
     desc: &str,
 ) -> i32 {
+    let label = crate::i18n::text(label);
+    let desc = crate::i18n::text(desc);
     if dimmed(a, row) {
         dim_row(c, t, f, y, sel, label, desc)
     } else {
@@ -201,7 +205,13 @@ fn a_row(
 
 pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) {
     c.fill(t.bg);
-    let y0 = crate::chrome::header(c, t, f, "Advanced", Some("Sound"));
+    let y0 = crate::chrome::header(
+        c,
+        t,
+        f,
+        crate::i18n::text("Advanced"),
+        Some(crate::i18n::text("Sound")),
+    );
     debug_assert_eq!(y0, TOP, "advanced list top drifted from the hit test");
     hline(c, y0, t.line);
 
@@ -219,7 +229,7 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
         if a.w1_chain {
             NOT_HERE
         } else {
-            "Correct headphone phase response"
+            crate::i18n::text("Correct headphone phase response")
         },
     );
     toggle(c, t, 418, cy - 11, 40, 22, 14, a.clear_phase);
@@ -239,9 +249,9 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
     let aidesc = if a.w1_chain {
         NOT_HERE
     } else if a.dsee_hx {
-        "Upscaling by source analysis — UNVERIFIED on this hardware"
+        crate::i18n::text("Upscaling by source analysis — UNVERIFIED on this hardware")
     } else {
-        "Upscaling by source analysis — DSEE HX is off"
+        crate::i18n::text("Upscaling by source analysis — DSEE HX is off")
     };
     let cy = a_row(
         c,
@@ -259,9 +269,9 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
     // Tuning the upscaler needs an upscaler. Same sentence shape as the two rows below, which have
     // said this about their own parents since the screen was written.
     let cdesc = if a.dsee_hx {
-        "Tune the upscaler to the material"
+        crate::i18n::text("Tune the upscaler to the material")
     } else {
-        "DSEE HX is off"
+        crate::i18n::text("DSEE HX is off")
     };
     let cy = a_row(
         c,
@@ -271,15 +281,15 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
         y0 + rh * 2,
         sel == 2,
         ROW_DSEE_CUSTOM,
-        "DSEE HX Custom",
+        crate::i18n::text("DSEE HX Custom"),
         cdesc,
     );
-    crate::sound::value_pill(c, f, t, 458, cy, a.dsee_custom);
+    crate::sound::value_pill(c, f, t, 458, cy, a.dsee_custom, a.dsee_custom_on);
 
     let vdesc = if a.vinyl_on {
-        "Character of the vinyl emulation"
+        crate::i18n::text("Character of the vinyl emulation")
     } else {
-        "Vinyl Processor is off"
+        crate::i18n::text("Vinyl Processor is off")
     };
     let cy = a_row(
         c,
@@ -289,10 +299,10 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
         y0 + rh * 3,
         sel == 3,
         ROW_VINYL_TYPE,
-        "Vinyl Character",
+        crate::i18n::text("Vinyl Character"),
         vdesc,
     );
-    crate::sound::value_pill(c, f, t, 458, cy, a.vinyl_type);
+    crate::sound::value_pill(c, f, t, 458, cy, a.vinyl_type, a.vinyl_on);
 
     let cy = a_row(
         c,
@@ -302,8 +312,8 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
         y0 + rh * 4,
         sel == 4,
         ROW_TONE,
-        "Tone Control",
-        "Bass / mid / treble — alternative to the EQ",
+        crate::i18n::text("Tone Control"),
+        crate::i18n::text("Bass / mid / treble — alternative to the EQ"),
     );
     toggle(c, t, 418, cy - 11, 40, 22, 14, a.tone_control);
 
@@ -312,9 +322,9 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
     // switch it on" is a reasonable order to do things in — the Vinyl Character row above says
     // the same thing about the Vinyl Processor.
     let bdesc = if a.tone_control {
-        "Three bands, ±10 dB"
+        crate::i18n::text("Three bands, ±10 dB")
     } else {
-        "Three bands — Tone Control is off"
+        crate::i18n::text("Three bands — Tone Control is off")
     };
     let cy = a_row(
         c,
@@ -324,7 +334,7 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
         y0 + rh * 5,
         sel == 5,
         ROW_TONE_BANDS,
-        "Adjust bands",
+        crate::i18n::text("Adjust bands"),
         bdesc,
     );
     let chev = sty(
@@ -340,9 +350,9 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
     // into a line input, it is about 3 dB louder at the same volume, and it gives up the class-D
     // amp's efficiency by an amount this device cannot measure.
     let hdesc = if a.hp_linear {
-        "Experimental — about 3 dB louder, may cost battery"
+        crate::i18n::text("Experimental — about 3 dB louder, may cost battery")
     } else {
-        "Experimental — off uses Sony's S-Master amp"
+        crate::i18n::text("Experimental — off uses Sony's S-Master amp")
     };
     let cy = a_row(
         c,
@@ -352,7 +362,7 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
         y0 + rh * 6,
         sel == 6,
         ROW_HP_AMP,
-        "Linear headphone amp",
+        crate::i18n::text("Linear headphone amp"),
         hdesc,
     );
     toggle(c, t, 418, cy - 11, 40, 22, 14, a.hp_linear);
@@ -360,11 +370,11 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
     // The DAC EQ. A route, like "Adjust bands". Source Direct holds it flat, and says so here
     // instead of dimming: the row stays the way in.
     let edesc = if a.source_direct {
-        "Five bands in the DAC chip — flat in Direct mode"
+        crate::i18n::text("Five bands in the DAC chip — flat in Direct mode")
     } else if a.dac_eq_on {
-        "Five bands in the DAC chip — on"
+        crate::i18n::text("Five bands in the DAC chip — on")
     } else {
-        "Five bands in the DAC chip — flat"
+        crate::i18n::text("Five bands in the DAC chip — flat")
     };
     let cy = a_row(
         c,
@@ -374,7 +384,7 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
         y0 + rh * 7,
         sel == 7,
         ROW_DAC_EQ,
-        "DAC EQ",
+        crate::i18n::text("DAC EQ"),
         edesc,
     );
     crate::widgets::right(c, f, 458.0, (cy + 7) as f32, "\u{203A}", &chev);
@@ -384,9 +394,9 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
     // says what it displaces instead of leaving that to be discovered by ear.
     if let Some(level) = a.clear_bass {
         let desc = if level == CLEAR_BASS[0] {
-            "Sony's bass boost — takes the place of the EQ"
+            crate::i18n::text("Sony's bass boost — takes the place of the EQ")
         } else {
-            "On — the EQ and Tone Control are out of the path"
+            crate::i18n::text("On — the EQ and Tone Control are out of the path")
         };
         let cy = a_row(
             c,
@@ -396,10 +406,10 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
             y0 + rh * 8,
             sel == 8,
             ROW_CLEAR_BASS,
-            "Clear Bass",
+            crate::i18n::text("Clear Bass"),
             desc,
         );
-        crate::sound::value_pill(c, f, t, 458, cy, level);
+        crate::sound::value_pill(c, f, t, 458, cy, level, a.clear_bass_on);
     }
 
     // ── the override banner ─────────────────────────────────────────────────────────────────
@@ -417,18 +427,18 @@ pub fn render(c: &mut Canvas, t: &Theme, f: &FontSet, a: &Advanced, sel: usize) 
     if let Some(who) = a.overridden_by {
         line(
             14,
-            &format!("{who} is on"),
+            &crate::ui_format!("{who} is on", who = who),
             sty(Family::Sans, Weight::SemiBold, 13.0, t.acc, 0.0),
         );
         line(
             34,
-            "The effects above are not in the path.",
+            crate::i18n::text("The effects above are not in the path."),
             sty(Family::Sans, Weight::Regular, 13.0, t.dim, 0.0),
         );
     } else {
         line(
             14,
-            "Set these once for a pair of headphones.",
+            crate::i18n::text("Set these once for a pair of headphones."),
             sty(Family::Sans, Weight::Regular, 13.0, t.faint, 0.0),
         );
     }
@@ -445,12 +455,14 @@ mod tests {
             dsee_ai: false,
             dsee_hx: false,
             dsee_custom: "Off",
+            dsee_custom_on: false,
             vinyl_type: VINYL_TYPES[0],
             vinyl_on: false,
             tone_control: false,
             hp_linear: false,
             dac_eq_on: false,
             clear_bass: None,
+            clear_bass_on: false,
             overridden_by: None,
             w1_chain: false,
         }
